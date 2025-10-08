@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Control Servo ESP32</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" type="image/png" href="pic2.png">
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script> 
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyCfWNCq64wbz4RR2Wx8i8pbcMb0PmyH3-o",
+      authDomain: "prueba3-652e6.firebaseapp.com",
+      databaseURL: "https://prueba3-652e6-default-rtdb.firebaseio.com",
+      projectId: "prueba3-652e6",
+      storageBucket: "prueba3-652e6.appspot.com",
+      messagingSenderId: "953665781347",
+      appId: "1:953665781347:web:6afd983d7cf0e96f3cc256"
+    };
+
+    // Init Firebase
+    firebase.initializeApp(firebaseConfig);
+
+    // Firebase referencias
+    const auth = firebase.auth();
+    const db = firebase.database();
+    const storage = firebase.storage();
+  </script>
+  <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
+</head>
+<body>
+  <!-- Header -->
+  <header class="p-3 mb-3 border-bottom content-sign-in" id="headerest">
+    <div class="container">
+      <div class="d-flex flex-wrap align-items-center justify-content-center justify-content-lg-start">
+        <a href="/" class="d-flex align-items-center mb-2 mb-lg-0 link-body-emphasis text-decoration-none">
+          <img src="pic2.png" alt="logo" width="80" height="70" class="d-inline-block align-text-top">
+        </a>
+
+        <ul class="nav col-12 col-lg-auto me-lg-auto mb-2 justify-content-center mb-md-0 p-3">
+          <li class="nav-item">
+            <a href="formulario.html" class="nav-link"><b>Formulario</b></a>
+          </li>
+          <li class="nav-item">
+            <a href="control.html" class="nav-link"><b>Dispensador</b></a>
+          </li>
+          <li class="nav-item">
+            <a href="historial.html" class="nav-link"><b>Historial</b></a>
+          </li>
+        </ul>
+
+        <div class="dropdown text-end">
+          <a href="#" class="d-block link-body-emphasis text-decoration-none dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" id="dropout">Cuenta</a> 
+          <ul class="dropdown-menu text-small">
+            <li><a class="dropdown-item" href="index.html">Salir</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </header><br>   
+
+  <!-- CONTENIDO (Control del Servo) -->
+  <div class="container" id="cardd">
+    <div class="content-sign-in" id="main-content">
+      <div class="row" id="control">
+        <!-- Tarjeta para Control Manual -->
+        <div class="card col-md-5 col-sm-11">
+          <p class="card-title py-3"><i class="fas fa-cogs"></i> Control Manual</p>
+
+          <!-- Imagen con clase personalizada -->
+          <img id="img" alt="Monitoreo" class="img-fluid mb-3" style="display: block; margin-left: auto; margin-right: auto;">
+          <p>Última foto: <span id="date-time"></span></p>
+
+          <p>Estado: <span id="servoState">Inactivo</span></p>
+          <div class="row">
+            <div class="col text-center">
+              <button class="btn btn-primary btn-md" id="btnServoActivateComida">Activar Comida</button>
+            </div>
+            <div class="col text-center">
+              <button class="btn btn-primary btn-md" id="btnServoActivateAgua">Activar Agua</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-2"></div><br>
+
+        <!-- Tarjeta para Control Automatizado -->
+        <div class="card col-md-5 col-sm-11">
+          <p class="card-title py-3"><i class="fas fa-cogs"></i> Control Automatizado</p>
+          <p>Fecha y Hora: <span id="venezuela-date-time"></span></p>
+          <h2>Configurar Horarios</h2>
+          <hr class="my-4">
+          <form>
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label for="scheduleType" class="form-label">Tipo:</label>
+                <select id="scheduleType" class="form-select" required>
+                  <option value="">...</option>
+                  <option value="comida">Comida</option>
+                  <option value="agua">Agua</option>
+                  <option value="ambos">Ambos</option>
+                </select>
+              </div>
+              <div class="col-md-6 mb-3">
+                <label for="scheduleTime" class="form-label">Hora:</label>
+                <input type="time" class="form-control" id="scheduleTime" required>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label for="scheduleAmount" class="form-label">Cantidad:</label>
+                <select id="scheduleAmount" class="form-select">
+                  <option value="">...</option>
+                  <option value="5000">30g - 65g (gato)</option>
+                  <option value="10000">60g - 110g (gato)</option>
+                  <option value="15000">110g - 160g (gato)</option>
+                  <option value="7000">45g - 130g (perro)</option>
+                  <option value="12000">130g - 200g (perro)</option>
+                  <option value="20000">200g - 380g (perro)</option>
+                  <option value="25000">380g - 560g (perro)</option>
+                  <option value="30000">560g - 760g (perro)</option>
+                </select>
+              </div>
+              <div class="col-md-3 mb-3">
+                <label class="form-label">Días:</label>
+                <div class="day-selector">
+                  <div class="form-check">
+                    <input type="checkbox" class="form-check-input" value="0" id="diaDomingo">
+                    <label class="form-check-label" for="diaDomingo">Domingo</label>
+                  </div>
+                  <div class="form-check">
+                    <input type="checkbox" class="form-check-input" value="1" id="diaLunes">
+                    <label class="form-check-label" for="diaLunes">Lunes</label>
+                  </div>
+                  <div class="form-check">
+                    <input type="checkbox" class="form-check-input" value="2" id="diaMartes">
+                    <label class="form-check-label" for="diaMartes">Martes</label>
+                  </div>
+                  <div class="form-check">
+                    <input type="checkbox" class="form-check-input" value="3" id="diaMiercoles">
+                    <label class="form-check-label" for="diaMiercoles">Miércoles</label>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-3 mb-3"><br><br>
+                <div class="day-selector">
+                  <div class="form-check">
+                    <input type="checkbox" class="form-check-input" value="4" id="diaJueves">
+                    <label class="form-check-label" for="diaJueves">Jueves</label>
+                  </div>
+                  <div class="form-check">
+                    <input type="checkbox" class="form-check-input" value="5" id="diaViernes">
+                    <label class="form-check-label" for="diaViernes">Viernes</label>
+                  </div>
+                  <div class="form-check">
+                    <input type="checkbox" class="form-check-input" value="6" id="diaSabado">
+                    <label class="form-check-label" for="diaSabado">Sábado</label>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col text-center py-3">
+                <button type="button" class="btn btn-primary" onclick="saveSchedule()">Guardar Horarios</button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div><br><br><br>
+
+  <!-- Tabla para mostrar horarios registrados -->
+  <div class="container py-5">
+    <h2>Horarios Registrados</h2>
+    <table class="table table-bordered" id="scheduleTable">
+      <thead>
+        <tr>
+          <th>Tipo</th>
+          <th>Hora</th>
+          <th>Cantidad</th>
+          <th>Días</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Footer -->
+  <footer class="py-5 my-8 footert" id="contfooter">
+    <ul class="nav justify-content-center border-bottom pb-3 mb-3">
+      <li class="nav-item"><a href="formulario.html" class="nav-link px-2"><b>Formulario</b></a></li>
+      <li class="nav-item"><a href="control.html" class="nav-link px-2"><b>Dispensador</b></a></li>
+      <li class="nav-item"><a href="historial.html" class="nav-link px-2"><b>Historial</b></a></li>
+    </ul>
+    <p class="text-center" id="textofooter"><b>Sistema Integrado de alimentacion para mascotas mediante tecnologia IoT (Internet de las cosas)</b></p>
+    <p class="text-center text-body-secondary">Hernandez, Jimenez y Rodriguez (2025)</p>
+  </footer>
+
+  <script>
+    // Función para cargar la foto desde Firebase Storage
+    function loadPhoto() {
+      const imgRef = storage.ref("data/photo.jpg");
+
+      imgRef.getDownloadURL()
+        .then((url) => {
+          console.log("Image URL:", url); // Verifica que la URL sea correcta
+          document.querySelector("#img").src = url;
+        })
+        .catch((error) => {
+          console.error("Error loading photo:", error);
+        });
+
+      imgRef.getMetadata()
+        .then((metadata) => {
+          const date = new Date(metadata.timeCreated);
+          const time = `${date.getHours()}:${date.getMinutes()}`;
+          const writtenDate = `${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()}`;
+          document.getElementById("date-time").innerHTML = `${writtenDate}  ${time}`;
+        })
+        .catch((error) => {
+          console.error("Error loading metadata:", error);
+        });
+    }
+
+    // Verificar autenticación y cargar la foto
+    auth.onAuthStateChanged(user => {
+      if (user) {
+        loadPhoto(); // Cargar la foto cuando el usuario esté autenticado
+      }
+    });
+
+    document.addEventListener("DOMContentLoaded", function () {
+      const btnServoActivateComida = document.getElementById('btnServoActivateComida');
+      const btnServoActivateAgua = document.getElementById('btnServoActivateAgua');
+      const servoStateElement = document.getElementById("servoState");
+
+      const dbRefServoComida = firebase.database().ref().child('board1/outputs/digital/12');
+      const dbRefServoAgua = firebase.database().ref().child('board1/outputs/digital/rele');
+      const dbRefLastWaterActivation = firebase.database().ref().child('lastWaterActivation'); // Nueva referencia
+
+      // Función para actualizar el estado del servo en la interfaz
+      const updateServoState = (tipo, estado) => {
+        servoStateElement.innerText = estado ? `${tipo} Activado` : "Inactivo";
+      };
+
+      // Función para verificar si han pasado 30 minutos desde la última activación del agua
+      const canActivateWater = async () => {
+        const snapshot = await dbRefLastWaterActivation.once('value');
+        const lastActivation = snapshot.val();
+        if (!lastActivation) return true; // Si no hay registro, permitir activación
+
+        const now = new Date();
+        const lastActivationTime = new Date(lastActivation);
+        const diffInMinutes = (now - lastActivationTime) / (1000 * 60); // Diferencia en minutos
+
+        return diffInMinutes >= 30; // Permitir solo si han pasado 30 minutos
+      };
+
+      // Función para actualizar la última activación del agua
+      const updateLastWaterActivation = () => {
+        const now = new Date().toISOString();
+        dbRefLastWaterActivation.set(now);
+      };
+
+      // Activar el servo para comida
+      btnServoActivateComida.onclick = () => {
+        dbRefServoComida.set(1).then(() => {
+          updateServoState("Comida", true);
+          setTimeout(() => {
+            dbRefServoComida.set(0); // Volver a 0 después de 5 segundos
+            updateServoState("Comida", false);
+          }, 5000); // 5 segundos
+        });
+      };
+
+      // Activar el servo para agua (con restricción de 30 minutos)
+      btnServoActivateAgua.onclick = async () => {
+        const canActivate = await canActivateWater();
+        if (!canActivate) {
+          alert("Debes esperar 30 minutos antes de activar el agua nuevamente.");
+          return;
+        }
+
+        dbRefServoAgua.set(0).then(() => {
+          updateServoState("Agua", true);
+          updateLastWaterActivation(); // Actualizar la última activación
+          setTimeout(() => {
+            dbRefServoAgua.set(1); // Volver a 0 después de 5 segundos
+            updateServoState("Agua", false  );
+          }, 5000); // 5 segundos 
+        });
+      };
+
+      // Verificar tareas programadas (con restricción de 30 minutos para el agua)
+      const checkScheduledTasks = async () => {
+        const now = new Date();
+        const currentTime = now.toTimeString().substr(0, 5);
+        const currentDay = now.getDay();
+
+        const snapshot = await db.ref('horarios').once('value');
+        snapshot.forEach(childSnapshot => {
+          const data = childSnapshot.val();
+          if (data.time === currentTime && data.days.includes(currentDay.toString())) {
+            if (data.type === "agua") {
+              canActivateWater().then(canActivate => {
+                if (canActivate) {
+                  activateServo(data.type, parseInt(data.amount));
+                  updateLastWaterActivation(); // Actualizar la última activación
+                } else {
+                  console.log("No se puede activar el agua: Restricción de 30 minutos.");
+                }
+              });
+            } else {
+              activateServo(data.type, parseInt(data.amount));
+            }
+          }
+        });
+      };
+
+      // Configurar tareas programadas y actualizar la hora
+      setInterval(checkScheduledTasks, 60000);
+      setInterval(updateVenezuelaDateTime, 1000);
+      updateVenezuelaDateTime();
+      loadSchedule();
+    });
+
+    // Guardar horarios
+    const saveSchedule = () => {
+      const scheduleType = document.getElementById('scheduleType').value;
+      const scheduleTime = document.getElementById('scheduleTime').value;
+      const scheduleAmount = document.getElementById('scheduleAmount').value;
+      const dias = [];
+      document.querySelectorAll('input[id^="dia"]:checked').forEach(checkbox => {
+        dias.push(checkbox.value);
+      });
+
+      if (!scheduleType || !scheduleTime || !scheduleAmount || dias.length === 0) {
+        alert("Por favor, completa todos los campos y selecciona al menos un día.");
+        return;
+      }
+
+      const key = db.ref().child('horarios').push().key;
+      db.ref('horarios/' + key).set({
+        type: scheduleType,
+        time: scheduleTime,
+        amount: scheduleAmount, // Guardar el valor numérico de la cantidad
+        days: dias
+      }).then(() => {
+        loadSchedule();
+      }).catch((error) => {
+        console.error("Error al guardar: ", error);
+      });
+    };
+
+    // Cargar horarios
+    const loadSchedule = () => {
+      const tableBody = document.getElementById('scheduleTable').getElementsByTagName('tbody')[0];
+      tableBody.innerHTML = '';
+
+      db.ref('horarios').once('value', snapshot => {
+        snapshot.forEach(childSnapshot => {
+          const data = childSnapshot.val();
+          const newRow = tableBody.insertRow();
+          newRow.insertCell(0).innerText = data.type;
+          newRow.insertCell(1).innerText = data.time;
+          newRow.insertCell(2).innerText = data.amount; // Mostrar el valor numérico de la cantidad
+          newRow.insertCell(3).innerText = data.days.map(day => getDayName(day)).join(', ');
+          const actionsCell = newRow.insertCell(4);
+          actionsCell.innerHTML = `<button class="btn btn-danger" onclick="deleteSchedule('${childSnapshot.key}')">Eliminar</button>`;
+        });
+      });
+    };
+
+    // Eliminar horario
+    const deleteSchedule = (key) => {
+      db.ref('horarios/' + key).remove().then(() => {
+        loadSchedule();
+      }).catch((error) => {
+        console.error("Error al eliminar: ", error);
+      });
+    };
+
+    // Activar el servo y rele
+    const activateServo = async (tipo, tiempo) => {
+      let servoRef;
+      if (tipo === "comida") {
+        servoRef = firebase.database().ref().child('board1/outputs/digital/12');
+      } else if (tipo === "agua") {
+        const canActivate = await canActivateWater();
+        if (!canActivate) {
+          console.log("No se puede activar el agua: Restricción de 30 minutos.");
+          return;
+        }
+        servoRef = firebase.database().ref().child('board1/outputs/digital/rele');
+      } else if (tipo === "ambos") {
+        activateServo("comida", tiempo);
+        activateServo("agua", tiempo);
+        return;
+      }
+
+      if (servoRef) {
+        servoRef.set(1).then(() => {
+          setTimeout(() => {
+            servoRef.set(0); // Volver a 0 después del tiempo especificado
+          }, tiempo);
+        });
+      }
+    };
+
+    // Obtener nombre del día
+    const getDayName = (dayIndex) => {
+      const days = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+      return days[dayIndex];
+    };
+
+      // Actualizar fecha y hora de Venezuela
+      const updateVenezuelaDateTime = () => {
+      const now = new Date();
+      const venezuelaOffset = -4 * 60; // UTC-4
+      const utcTime = now.getTime() + (now.getTimezoneOffset() * 60000);
+      const venezuelaDate = new Date(utcTime + (venezuelaOffset * 60000));
+
+      const formattedDate = venezuelaDate.toLocaleDateString();
+      const formattedTime = venezuelaDate.toLocaleTimeString();
+      document.getElementById('venezuela-date-time').innerText = `${formattedDate} ${formattedTime}`;
+    };
+
+    // Log current time every minute
+    setInterval(() => {
+      console.log("Hora Actual:", new Date().toLocaleTimeString());
+    }, 60000);
+    
+    setInterval(updateVenezuelaDateTime, 1000);
+    updateVenezuelaDateTime();
+
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js" integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.min.js" integrity="sha384-0pUGZvbkm6XF6gxjEnlmuGrJXVbNuzT9qBBavbLwCsOGabYfZo0T0to5eqruptLy" crossorigin="anonymous"></script>
+</body>
+</html>
