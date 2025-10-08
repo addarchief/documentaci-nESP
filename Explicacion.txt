@@ -1,0 +1,26 @@
+El control de agua en los dos códigos (control.html y servo-rele.ino) funciona de la siguiente manera y están estrechamente relacionados a través de Firebase, que es el puente de comunicación entre la interfaz web y el hardware (ESP32):
+
+### 1. **control.html (Interfaz web/JavaScript)**
+- **Activación manual:** El usuario puede activar el suministro de agua presionando un botón en la interfaz. Antes de activar, se verifica si han pasado al menos 30 minutos desde la última activación usando la función `canActivateWater()`, que consulta el valor `lastWaterActivation` en la base de datos de Firebase.
+- **Activación automatizada:** El sistema permite programar horarios para la activación automática del agua. Cada minuto, la función `checkScheduledTasks()` revisa si coincide la hora y el día con alguna tarea programada, y si el tipo es "agua", verifica la restricción de 30 minutos antes de activar.
+- **Actualización de estado:** Cuando se activa el agua, se actualiza el estado del servo y se escribe la nueva hora de activación en Firebase (`updateLastWaterActivation()`).
+- **Comunicación con hardware:** Para activar el agua, la interfaz web modifica el valor en la base de datos de Firebase en la ruta `board1/outputs/digital/rele`. El ESP32 está atento a cambios en esa ruta.
+
+### 2. **servo-rele.ino (Firmware ESP32)**
+- **Escucha de comandos:** El ESP32 utiliza la función `streamCallback` para detectar cambios en la base de datos de Firebase, específicamente en la ruta `/rele`.
+- **Control del relé:** Cuando recibe una orden (por ejemplo, `set(1)` desde la web), ejecuta `controlarRele(state)`, que activa o desactiva el relé físico para abrir/cerrar el suministro de agua.
+- **Sincronización:** El ESP32 no verifica la restricción de 30 minutos. Esta lógica está en la web. El ESP32 simplemente obedece los comandos que le llegan de Firebase.
+
+### **Relación entre ambos**
+- **La web controla cuándo se puede activar el agua (restricción de 30 minutos y horarios) y actualiza Firebase.**
+- **El ESP32 recibe el comando mediante Firebase y activa/desactiva el relé según la orden recibida.**
+- **La seguridad del sistema (evitar activaciones muy seguidas) depende de la lógica implementada en la web. El hardware ejecuta lo que recibe.**
+
+---
+
+**En resumen:**  
+- La interfaz web decide cuándo se puede activar el agua, aplica restricciones y actualiza el estado en Firebase.
+- El ESP32 escucha los cambios en Firebase y activa/desactiva el relé físico para suministrar agua.
+- Ambos están conectados por la base de datos en tiempo real de Firebase, haciendo posible la automatización y el control remoto bajo reglas programadas.
+
+¿Te gustaría ver el flujo completo entre ambos, con ejemplos de código específico?
